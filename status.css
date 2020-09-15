@@ -1,0 +1,29 @@
+tr {
+    background-color: orange;
+}
+
+td {
+    padding: 5px 10px 5px 10px;
+}
+a, a:visited, a:hover, a:active {
+  color: inherit;
+}
+
+.code-200 {
+    background-color: lightgreen;
+}
+
+.code-500,
+.code-503,
+.code-504 {
+    background-color: red;
+    font-weight: bold;
+    animation: blinker 1s linear infinite;
+}
+
+@keyframes blinker {
+  50% {
+    background-color: black;
+    color: white;
+  }
+}
