@@ -5,12 +5,21 @@ const FILE_STATUS = 'status/status';
 const FILE_TIMESTAMP = 'status/timestamp';
 const WRAPPER_MONITORING = 'monitoring';
 const WRAPPER_TIMESTAMP = 'timestamp';
+const CODES_OK = [200];
+const CODES_ERROR = [500, 503, 504];
+const TIME_THRESHOLD = 2000;
 
 (() => {
+    update();
+    setInterval(() => {
+        update();
+    }, INTERVAL);
+})();
+
+function update() {
     getStatus();
     getTimestamp();
-    setInterval(() => { location.reload(); }, INTERVAL);
-})();
+}
 
 function getStatus() {
     let xhr = new XMLHttpRequest();
@@ -54,13 +63,14 @@ function handleStatus(content) {
     for (let i = 0; i < lines.length; i++) {
         let parts = lines[i].split(';');
 
-        if (parts.length !== 2) {
+        if (parts.length !== 3) {
             continue;
         }
 
         sites.push({
             url: parts[0],
-            code: parts[1]
+            code: parts[1],
+            time: parts[2]
         });
     }
     createTable(sites);
@@ -73,6 +83,7 @@ function handleTimestamp(content) {
         return;
     }
 
+    wrapper.innerHTML = '';
     wrapper.appendChild(document.createTextNode((new Date(content * 1000)).toLocaleString('de')));
 }
 
@@ -87,10 +98,14 @@ function createTable(sites) {
     for (let i = 0; i < sites.length; i++) {
         let site = sites[i];
 
+        let url = new URL(site.url);
+        let code = parseInt(site.code, 10);
+        let time = parseInt(parseFloat(site.time) * 1000, 10);
+
         // url
         let cellUrl = document.createElement('td');
+        cellUrl.classList.add('link')
         let anchor = document.createElement('a');
-        let url = new URL(site.url);
         anchor.appendChild(document.createTextNode(url.hostname));
         anchor.href = site.url;
         anchor.target = '_blank';
@@ -98,15 +113,33 @@ function createTable(sites) {
 
         // code
         let cellCode = document.createElement('td');
-        cellCode.appendChild(document.createTextNode(site.code));
+        cellCode.classList.add('code')
+        cellCode.appendChild(document.createTextNode(code));
+
+        // time
+        let cellTime = document.createElement('td');
+        cellTime.classList.add('time')
+        cellTime.appendChild(document.createTextNode(time + ' ms'));
+        if (time > TIME_THRESHOLD) {
+            cellTime.classList.add('slow');
+        }
 
         // row
         let row = document.createElement('tr');
-        row.classList.add('code-' + site.code);
+        row.classList.add('code-' + code);
+
+        if (~CODES_OK.indexOf(code)) {
+            row.classList.add('ok');
+        } else if (~CODES_ERROR.indexOf(code)) {
+            row.classList.add('error');
+        }
+
         row.appendChild(cellUrl);
         row.appendChild(cellCode);
+        row.appendChild(cellTime);
         table.appendChild(row);
     }
 
+    wrapper.innerHTML = '';
     wrapper.appendChild(table);
 }
