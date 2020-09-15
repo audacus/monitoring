@@ -11,55 +11,45 @@ const TIME_THRESHOLD = 2000;
 
 (() => {
     update();
-    setInterval(() => {
-        update();
-    }, INTERVAL);
+    setInterval(update, INTERVAL);
 })();
 
 function update() {
+    console.log('update');
     getStatus();
     getTimestamp();
 }
 
-function getStatus() {
+function getFile(file, callback) {
     let xhr = new XMLHttpRequest();
     xhr.onreadystatechange = () => {
         if (xhr.readyState === 4) {
             let content = xhr.responseText;
             if (content.length > 0) {
-                console.log('found ' + FILE_STATUS);
-                handleStatus(content);
+                console.log('found ' + file);
+                callback(content);
             }
         }
     };
     xhr.onerror = () => {
-        console.log('error: could not get ' + FILE_STATUS);
+        console.log('error: could not get ' + file);
     };
-    xhr.open('get', FILE_STATUS);
+    xhr.open('get', file);
     xhr.send();
 }
 
+function getStatus() {
+    getFile(FILE_STATUS, handleStatus);
+}
+
 function getTimestamp() {
-    let xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = () => {
-        if (xhr.readyState === 4) {
-            let content = xhr.responseText;
-            if (content.length > 0) {
-                console.log('found ' + FILE_TIMESTAMP);
-                handleTimestamp(content);
-            }
-        }
-    };
-    xhr.onerror = () => {
-        console.log('error: could not get ' + FILE_TIMESTAMP);
-    };
-    xhr.open('get', FILE_TIMESTAMP);
-    xhr.send();
+    getFile(FILE_TIMESTAMP, handleTimestamp);
 }
 
 function handleStatus(content) {
     let lines = content.split('\n');
     let sites = [];
+
     for (let i = 0; i < lines.length; i++) {
         let parts = lines[i].split(';');
 
@@ -73,11 +63,13 @@ function handleStatus(content) {
             time: parts[2]
         });
     }
+
     createTable(sites);
 }
 
 function handleTimestamp(content) {
     let wrapper = document.getElementById(WRAPPER_TIMESTAMP);
+
     if (!wrapper) {
         console.error('no #' + WRAPPER_TIMESTAMP + ' wrapper found!');
         return;
@@ -89,6 +81,7 @@ function handleTimestamp(content) {
 
 function createTable(sites) {
     let wrapper = document.getElementById(WRAPPER_MONITORING);
+
     if (!wrapper) {
         console.error('no #' + WRAPPER_MONITORING + ' wrapper found!');
         return;
